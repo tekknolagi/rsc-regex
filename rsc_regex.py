@@ -56,11 +56,13 @@ class Match(Opcode):
 
 @dataclass
 class Jump(Opcode):
+    "relative displacement"
     target: int
 
 
 @dataclass
 class Split(Opcode):
+    "relative displacements"
     target1: int
     target2: int
 
@@ -74,6 +76,24 @@ def compile(expr: Expr) -> list[Opcode]:
     raise NotImplementedError(f"Unsupported expression: {expr}")
 
 
+def match(ops: list[Opcode], text: str) -> bool:
+    pc = 0
+    textp = 0
+    while pc < len(ops):
+        op = ops[pc]
+        if isinstance(op, Char):
+            if textp >= len(text):
+                return False
+            if text[textp] == op.value:
+                pc += 1
+                textp += 1
+            else:
+                return False
+        else:
+            raise NotImplementedError(f"Unsupported opcode: {op}")
+    return True
+
+
 class CompileTests(unittest.TestCase):
     def test_compile_lit(self) -> None:
         self.assertEqual(compile(Lit("a")), [Char("a")])
@@ -84,6 +104,23 @@ class CompileTests(unittest.TestCase):
     def test_compile_nested_seq(self) -> None:
         self.assertEqual(compile(Seq(Seq(Lit("a"), Lit("b")), Lit("c"))), [Char("a"), Char("b"), Char("c")])
 
+
+
+class MatchTests(unittest.TestCase):
+    def test_match_char_matches(self) -> None:
+        self.assertEqual(match([Char("a")], "a"), True)
+        self.assertEqual(match([], "a"), True)
+
+    def test_match_char_does_not_match(self) -> None:
+        self.assertEqual(match([Char("a")], "b"), False)
+
+    def test_match_chars_matches(self) -> None:
+        self.assertEqual(match([Char("a"), Char("b")], "ab"), True)
+        self.assertEqual(match([Char("a"), Char("b")], "abc"), True)
+
+    def test_match_chars_does_not_match(self) -> None:
+        self.assertEqual(match([Char("a"), Char("b")], "ac"), False)
+        self.assertEqual(match([Char("a"), Char("b")], "a"), False)
 
 if __name__ == "__main__":
     unittest.main()
