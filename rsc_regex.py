@@ -133,5 +133,6 @@ class MatchTests(unittest.TestCase):
     def test_jump_is_relative_displacement(self) -> None:
         self.assertEqual(match([Char("a"), Jump(1), Char("x"), Char("b")], "ab"), True)
 
+
 if __name__ == "__main__":
     unittest.main()
