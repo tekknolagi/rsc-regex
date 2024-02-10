@@ -150,6 +150,8 @@ def native_compile(ops: list[Opcode]) -> str:
                 "jne .Lno_match",
                 "inc rdi",
             ]
+        elif isinstance(op, Match):
+            result.append("jmp .Lmatch")
         elif isinstance(op, Jump):
             result.append(f"jmp .Lop_{pc+op.target}")
         else:
@@ -286,6 +288,18 @@ class NativeCompileTests(unittest.TestCase):
                     "jne .Lno_match",
                     "inc rdi",
                     ".Lop_3",
+                ]
+            ),
+        )
+
+    def test_native_compile_match(self) -> None:
+        self.assertEqual(
+            native_compile([Match()]),
+            "\n".join(
+                [
+                    ".Lop_0",
+                    "jmp .Lmatch",
+                    ".Lop_1",
                 ]
             ),
         )
