@@ -144,7 +144,7 @@ def native_compile(ops: list[Opcode]) -> str:
                 # Strings are nul-terminated; we assume the regex has no
                 # nul so we can check for out-of-bounds and non-matching in
                 # one comparison
-                f"cmp [rdi], 0x{ord(op.value)}",
+                f"cmpb [rdi], 0x{ord(op.value)}",
                 "jne .Lno_match",
                 "inc rdi",
             ]
@@ -235,7 +235,7 @@ class EndToEndTests(unittest.TestCase):
 class NativeCompileTests(unittest.TestCase):
     def test_native_compile_lit(self) -> None:
         self.assertEqual(
-            native_compile([Char("a")]), "cmp [rdi], 0x97\njne .Lno_match\ninc rdi"
+            native_compile([Char("a")]), "cmpb [rdi], 0x97\njne .Lno_match\ninc rdi"
         )
 
     def test_native_compile_seq(self) -> None:
@@ -243,10 +243,10 @@ class NativeCompileTests(unittest.TestCase):
             native_compile([Char("a"), Char("b")]),
             "\n".join(
                 [
-                    "cmp [rdi], 0x97",
+                    "cmpb [rdi], 0x97",
                     "jne .Lno_match",
                     "inc rdi",
-                    "cmp [rdi], 0x98",
+                    "cmpb [rdi], 0x98",
                     "jne .Lno_match",
                     "inc rdi",
                 ]
