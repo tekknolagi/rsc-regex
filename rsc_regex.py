@@ -76,9 +76,7 @@ def compile(expr: Expr) -> list[Opcode]:
     raise NotImplementedError(f"Unsupported expression: {expr}")
 
 
-def match(ops: list[Opcode], text: str) -> bool:
-    pc = 0
-    textp = 0
+def match(ops: list[Opcode], text: str, pc:int=0, textp:int=0) -> bool:
     while pc < len(ops):
         op = ops[pc]
         pc += 1
@@ -93,6 +91,10 @@ def match(ops: list[Opcode], text: str) -> bool:
             pc += op.target
         elif isinstance(op, Match):
             return True
+        elif isinstance(op, Split):
+            if match(ops, text, pc + op.target1, textp):
+                return True
+            pc += op.target2
         else:
             raise NotImplementedError(f"Unsupported opcode: {op}")
     return True
@@ -132,6 +134,16 @@ class MatchTests(unittest.TestCase):
 
     def test_jump_is_relative_displacement(self) -> None:
         self.assertEqual(match([Char("a"), Jump(1), Char("x"), Char("b")], "ab"), True)
+
+    def test_split_is_relative_displacements(self) -> None:
+        self.assertEqual(match([Split(0, 2), Char("a"), Jump(1), Char("b")], "ab"), True)
+        self.assertEqual(match([Split(0, 2), Char("a"), Jump(1), Char("b")], "ba"), True)
+        prog = [Split(0, 2), Char("a"), Jump(2), Char("b"), Char("c")]
+        self.assertEqual(match(prog, "a"), True)
+        self.assertEqual(match(prog, "b"), False)
+        self.assertEqual(match(prog, "c"), False)
+        self.assertEqual(match(prog, "bc"), True)
+
 
 
 if __name__ == "__main__":
