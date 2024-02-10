@@ -138,7 +138,9 @@ def match(ops: list[Opcode], text: str) -> bool:
 
 def native_compile(ops: list[Opcode]) -> str:
     result: list[str] = []
-    for op in ops:
+    for pc, op in enumerate(ops):
+        result.append(f".Lop_{pc}")
+        pc += 1
         if isinstance(op, Char):
             result += [
                 # Strings are nul-terminated; we assume the regex has no
@@ -148,8 +150,11 @@ def native_compile(ops: list[Opcode]) -> str:
                 "jne .Lno_match",
                 "inc rdi",
             ]
+        elif isinstance(op, Jump):
+            result.append(f"jmp .Lop_{pc+op.target}")
         else:
             raise NotImplementedError(f"Unsupported opcode: {op}")
+    result.append(f".Lop_{pc}")
     return "\n".join(result)
 
 
@@ -235,7 +240,16 @@ class EndToEndTests(unittest.TestCase):
 class NativeCompileTests(unittest.TestCase):
     def test_native_compile_lit(self) -> None:
         self.assertEqual(
-            native_compile([Char("a")]), "cmpb [rdi], 0x97\njne .Lno_match\ninc rdi"
+            native_compile([Char("a")]),
+            "\n".join(
+                [
+                    ".Lop_0",
+                    "cmpb [rdi], 0x97",
+                    "jne .Lno_match",
+                    "inc rdi",
+                    ".Lop_1",
+                ]
+            ),
         )
 
     def test_native_compile_seq(self) -> None:
@@ -243,12 +257,35 @@ class NativeCompileTests(unittest.TestCase):
             native_compile([Char("a"), Char("b")]),
             "\n".join(
                 [
+                    ".Lop_0",
                     "cmpb [rdi], 0x97",
                     "jne .Lno_match",
                     "inc rdi",
+                    ".Lop_1",
                     "cmpb [rdi], 0x98",
                     "jne .Lno_match",
                     "inc rdi",
+                    ".Lop_2",
+                ]
+            ),
+        )
+
+    def test_native_compile_jump(self) -> None:
+        self.assertEqual(
+            native_compile([Char("a"), Jump(1), Char("b")]),
+            "\n".join(
+                [
+                    ".Lop_0",
+                    "cmpb [rdi], 0x97",
+                    "jne .Lno_match",
+                    "inc rdi",
+                    ".Lop_1",
+                    "jmp .Lop_3",
+                    ".Lop_2",
+                    "cmpb [rdi], 0x98",
+                    "jne .Lno_match",
+                    "inc rdi",
+                    ".Lop_3",
                 ]
             ),
         )
