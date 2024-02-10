@@ -85,15 +85,15 @@ def compile(expr: Expr) -> list[Opcode]:
         left = compile(expr.left)
         right = compile(expr.right)
         return [
-                Split(0, len(left) + 1),
-                *left,
-                Jump(len(right) + 1),
-                *right,
-                ]
+            Split(0, len(left) + 1),
+            *left,
+            Jump(len(right) + 1),
+            *right,
+        ]
     raise NotImplementedError(f"Unsupported expression: {expr}")
 
 
-def match(ops: list[Opcode], text: str, pc:int=0, textp:int=0) -> bool:
+def match(ops: list[Opcode], text: str, pc: int = 0, textp: int = 0) -> bool:
     while pc < len(ops):
         op = ops[pc]
         pc += 1
@@ -125,11 +125,16 @@ class CompileTests(unittest.TestCase):
         self.assertEqual(compile(Seq(Lit("a"), Lit("b"))), [Char("a"), Char("b")])
 
     def test_compile_nested_seq(self) -> None:
-        self.assertEqual(compile(Seq(Seq(Lit("a"), Lit("b")), Lit("c"))), [Char("a"), Char("b"), Char("c")])
+        self.assertEqual(
+            compile(Seq(Seq(Lit("a"), Lit("b")), Lit("c"))),
+            [Char("a"), Char("b"), Char("c")],
+        )
 
     def test_compile_alt(self) -> None:
-        self.assertEqual(compile(Alt(Lit("a"), Lit("b"))),
-                         [Split(0, 2), Char("a"), Jump(2), Char("b")])
+        self.assertEqual(
+            compile(Alt(Lit("a"), Lit("b"))),
+            [Split(0, 2), Char("a"), Jump(2), Char("b")],
+        )
 
 
 class MatchTests(unittest.TestCase):
@@ -156,8 +161,12 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(match([Char("a"), Jump(1), Char("x"), Char("b")], "ab"), True)
 
     def test_split_is_relative_displacements(self) -> None:
-        self.assertEqual(match([Split(0, 2), Char("a"), Jump(1), Char("b")], "ab"), True)
-        self.assertEqual(match([Split(0, 2), Char("a"), Jump(1), Char("b")], "ba"), True)
+        self.assertEqual(
+            match([Split(0, 2), Char("a"), Jump(1), Char("b")], "ab"), True
+        )
+        self.assertEqual(
+            match([Split(0, 2), Char("a"), Jump(1), Char("b")], "ba"), True
+        )
         prog = [Split(0, 2), Char("a"), Jump(2), Char("b"), Char("c")]
         self.assertEqual(match(prog, "a"), True)
         self.assertEqual(match(prog, "b"), False)
