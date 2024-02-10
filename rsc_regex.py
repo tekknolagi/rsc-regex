@@ -138,6 +138,15 @@ def match(ops: list[Opcode], text: str) -> bool:
 
 def native_compile(ops: list[Opcode]) -> str:
     result: list[str] = []
+
+    def push_thread(pc: int) -> list[str]:
+        return [
+            f"lea rax, .Lop_{pc}",
+            "push rax",
+            "mov rax, rdi",
+            "push rdi",
+        ]
+
     for pc, op in enumerate(ops):
         result.append(f".Lop_{pc}")
         pc += 1
@@ -154,6 +163,11 @@ def native_compile(ops: list[Opcode]) -> str:
             result.append("jmp .Lmatch")
         elif isinstance(op, Jump):
             result.append(f"jmp .Lop_{pc+op.target}")
+        elif isinstance(op, Split):
+            result += [
+                *push_thread(pc + op.target2),
+                f"jmp .Lop_{pc+op.target1}",
+            ]
         else:
             raise NotImplementedError(f"Unsupported opcode: {op}")
     result.append(f".Lop_{pc}")
@@ -300,6 +314,32 @@ class NativeCompileTests(unittest.TestCase):
                     ".Lop_0",
                     "jmp .Lmatch",
                     ".Lop_1",
+                ]
+            ),
+        )
+
+    def test_native_compile_split(self) -> None:
+        self.assertEqual(
+            native_compile([Split(0, 2), Char("a"), Jump(1), Char("b")]),
+            "\n".join(
+                [
+                    ".Lop_0",
+                    "lea rax, .Lop_3",
+                    "push rax",
+                    "mov rax, rdi",
+                    "push rdi",
+                    "jmp .Lop_1",
+                    ".Lop_1",
+                    "cmpb [rdi], 0x97",
+                    "jne .Lno_match",
+                    "inc rdi",
+                    ".Lop_2",
+                    "jmp .Lop_4",
+                    ".Lop_3",
+                    "cmpb [rdi], 0x98",
+                    "jne .Lno_match",
+                    "inc rdi",
+                    ".Lop_4",
                 ]
             ),
         )
