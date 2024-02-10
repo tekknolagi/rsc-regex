@@ -139,26 +139,26 @@ class CompileTests(unittest.TestCase):
 
 class MatchTests(unittest.TestCase):
     def test_match_char_matches(self) -> None:
-        self.assertEqual(match([Char("a")], "a"), True)
-        self.assertEqual(match([], "a"), True)
+        self.assertTrue(match([Char("a")], "a"))
+        self.assertTrue(match([], "a"))
 
     def test_match_char_does_not_match(self) -> None:
-        self.assertEqual(match([Char("a")], "b"), False)
+        self.assertFalse(match([Char("a")], "b"))
 
     def test_match_chars_matches(self) -> None:
-        self.assertEqual(match([Char("a"), Char("b")], "ab"), True)
-        self.assertEqual(match([Char("a"), Char("b")], "abc"), True)
+        self.assertTrue(match([Char("a"), Char("b")], "ab"))
+        self.assertTrue(match([Char("a"), Char("b")], "abc"))
 
     def test_match_chars_does_not_match(self) -> None:
-        self.assertEqual(match([Char("a"), Char("b")], "ac"), False)
-        self.assertEqual(match([Char("a"), Char("b")], "a"), False)
+        self.assertFalse(match([Char("a"), Char("b")], "ac"))
+        self.assertFalse(match([Char("a"), Char("b")], "a"))
 
     def test_match_returns_true(self) -> None:
-        self.assertEqual(match([Match()], "ac"), True)
-        self.assertEqual(match([Match(), Char("x")], "ac"), True)
+        self.assertTrue(match([Match()], "ac"))
+        self.assertTrue(match([Match(), Char("x")], "ac"))
 
     def test_jump_is_relative_displacement(self) -> None:
-        self.assertEqual(match([Char("a"), Jump(1), Char("x"), Char("b")], "ab"), True)
+        self.assertTrue(match([Char("a"), Jump(1), Char("x"), Char("b")], "ab"))
 
     def test_split_is_relative_displacements(self) -> None:
         self.assertEqual(
@@ -168,36 +168,36 @@ class MatchTests(unittest.TestCase):
             match([Split(0, 2), Char("a"), Jump(1), Char("b")], "ba"), True
         )
         prog = [Split(0, 2), Char("a"), Jump(2), Char("b"), Char("c")]
-        self.assertEqual(match(prog, "a"), True)
-        self.assertEqual(match(prog, "b"), False)
-        self.assertEqual(match(prog, "c"), False)
-        self.assertEqual(match(prog, "bc"), True)
+        self.assertTrue(match(prog, "a"))
+        self.assertFalse(match(prog, "b"))
+        self.assertFalse(match(prog, "c"))
+        self.assertTrue(match(prog, "bc"))
 
 
 class EndToEndTests(unittest.TestCase):
     def test_match_lit(self) -> None:
-        self.assertEqual(match(compile(Lit("a")), "a"), True)
-        self.assertEqual(match(compile(Lit("a")), "b"), False)
+        self.assertTrue(match(compile(Lit("a")), "a"))
+        self.assertFalse(match(compile(Lit("a")), "b"))
 
     def test_match_seq(self) -> None:
-        self.assertEqual(match(compile(Seq(Lit("a"), Lit("b"))), "ab"), True)
-        self.assertEqual(match(compile(Seq(Lit("a"), Lit("b"))), "ac"), False)
+        self.assertTrue(match(compile(Seq(Lit("a"), Lit("b"))), "ab"))
+        self.assertFalse(match(compile(Seq(Lit("a"), Lit("b"))), "ac"))
 
     def test_match_alt(self) -> None:
-        self.assertEqual(match(compile(Alt(Lit("a"), Lit("b"))), "a"), True)
-        self.assertEqual(match(compile(Alt(Lit("a"), Lit("b"))), "b"), True)
-        self.assertEqual(match(compile(Alt(Lit("a"), Lit("b"))), "c"), False)
+        self.assertTrue(match(compile(Alt(Lit("a"), Lit("b"))), "a"))
+        self.assertTrue(match(compile(Alt(Lit("a"), Lit("b"))), "b"))
+        self.assertFalse(match(compile(Alt(Lit("a"), Lit("b"))), "c"))
 
     def test_match_alt_seq(self) -> None:
         ab_or_cd = compile(Alt(Seq(Lit("a"), Lit("b")), Seq(Lit("c"), Lit("d"))))
-        self.assertEqual(match(ab_or_cd, "a"), False)
-        self.assertEqual(match(ab_or_cd, "b"), False)
-        self.assertEqual(match(ab_or_cd, "c"), False)
-        self.assertEqual(match(ab_or_cd, "d"), False)
-        self.assertEqual(match(ab_or_cd, "ac"), False)
-        self.assertEqual(match(ab_or_cd, "bd"), False)
-        self.assertEqual(match(ab_or_cd, "ab"), True)
-        self.assertEqual(match(ab_or_cd, "cd"), True)
+        self.assertFalse(match(ab_or_cd, "a"))
+        self.assertFalse(match(ab_or_cd, "b"))
+        self.assertFalse(match(ab_or_cd, "c"))
+        self.assertFalse(match(ab_or_cd, "d"))
+        self.assertFalse(match(ab_or_cd, "ac"))
+        self.assertFalse(match(ab_or_cd, "bd"))
+        self.assertTrue(match(ab_or_cd, "ab"))
+        self.assertTrue(match(ab_or_cd, "cd"))
 
 
 if __name__ == "__main__":
