@@ -81,11 +81,11 @@ def match(ops: list[Opcode], text: str) -> bool:
     textp = 0
     while pc < len(ops):
         op = ops[pc]
+        pc += 1
         if isinstance(op, Char):
             if textp >= len(text):
                 return False
             if text[textp] == op.value:
-                pc += 1
                 textp += 1
             else:
                 return False
