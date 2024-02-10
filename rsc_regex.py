@@ -93,28 +93,47 @@ def compile(expr: Expr) -> list[Opcode]:
     raise NotImplementedError(f"Unsupported expression: {expr}")
 
 
-def match(ops: list[Opcode], text: str, pc: int = 0, textp: int = 0) -> bool:
+@dataclass
+class Thread:
+    pc: int
+    textp: int
+
+
+MAX_THREADS = 10
+
+
+def run_thread(ops: list[Opcode], text: str, threads: list[Thread]) -> bool:
+    thread = threads.pop()
+    pc = thread.pc
+    textp = thread.textp
     while pc < len(ops):
         op = ops[pc]
         pc += 1
         if isinstance(op, Char):
-            if textp >= len(text):
+            if textp >= len(text) or text[textp] != op.value:
                 return False
-            if text[textp] == op.value:
-                textp += 1
-            else:
-                return False
+            textp += 1
         elif isinstance(op, Jump):
             pc += op.target
         elif isinstance(op, Match):
             return True
         elif isinstance(op, Split):
-            if match(ops, text, pc + op.target1, textp):
-                return True
-            pc += op.target2
+            if len(threads) >= MAX_THREADS:
+                raise RuntimeError("Too many threads")
+            threads.append(Thread(pc + op.target2, textp))
+            pc += op.target1
         else:
             raise NotImplementedError(f"Unsupported opcode: {op}")
     return True
+
+
+def match(ops: list[Opcode], text: str) -> bool:
+    threads = [Thread(pc=0, textp=0)]
+    while threads:
+        result = run_thread(ops, text, threads)
+        if result:
+            return True
+    return False
 
 
 class CompileTests(unittest.TestCase):
