@@ -89,6 +89,8 @@ def match(ops: list[Opcode], text: str) -> bool:
                 textp += 1
             else:
                 return False
+        elif isinstance(op, Jump):
+            pc += op.target
         elif isinstance(op, Match):
             return True
         else:
@@ -127,6 +129,9 @@ class MatchTests(unittest.TestCase):
     def test_match_returns_true(self) -> None:
         self.assertEqual(match([Match()], "ac"), True)
         self.assertEqual(match([Match(), Char("x")], "ac"), True)
+
+    def test_jump_is_relative_displacement(self) -> None:
+        self.assertEqual(match([Char("a"), Jump(1), Char("x"), Char("b")], "ab"), True)
 
 if __name__ == "__main__":
     unittest.main()
