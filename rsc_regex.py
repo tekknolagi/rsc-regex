@@ -81,6 +81,9 @@ class CompileTests(unittest.TestCase):
     def test_compile_seq(self) -> None:
         self.assertEqual(compile(Seq(Lit("a"), Lit("b"))), [Char("a"), Char("b")])
 
+    def test_compile_nested_seq(self) -> None:
+        self.assertEqual(compile(Seq(Seq(Lit("a"), Lit("b")), Lit("c"))), [Char("a"), Char("b"), Char("c")])
+
 
 if __name__ == "__main__":
     unittest.main()
