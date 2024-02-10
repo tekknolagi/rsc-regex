@@ -161,12 +161,8 @@ class MatchTests(unittest.TestCase):
         self.assertTrue(match([Char("a"), Jump(1), Char("x"), Char("b")], "ab"))
 
     def test_split_is_relative_displacements(self) -> None:
-        self.assertEqual(
-            match([Split(0, 2), Char("a"), Jump(1), Char("b")], "ab"), True
-        )
-        self.assertEqual(
-            match([Split(0, 2), Char("a"), Jump(1), Char("b")], "ba"), True
-        )
+        self.assertTrue(match([Split(0, 2), Char("a"), Jump(1), Char("b")], "ab"))
+        self.assertTrue(match([Split(0, 2), Char("a"), Jump(1), Char("b")], "ba"))
         prog = [Split(0, 2), Char("a"), Jump(2), Char("b"), Char("c")]
         self.assertTrue(match(prog, "a"))
         self.assertFalse(match(prog, "b"))
