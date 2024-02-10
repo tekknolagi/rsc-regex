@@ -89,6 +89,8 @@ def match(ops: list[Opcode], text: str) -> bool:
                 textp += 1
             else:
                 return False
+        elif isinstance(op, Match):
+            return True
         else:
             raise NotImplementedError(f"Unsupported opcode: {op}")
     return True
@@ -121,6 +123,10 @@ class MatchTests(unittest.TestCase):
     def test_match_chars_does_not_match(self) -> None:
         self.assertEqual(match([Char("a"), Char("b")], "ac"), False)
         self.assertEqual(match([Char("a"), Char("b")], "a"), False)
+
+    def test_match_returns_true(self) -> None:
+        self.assertEqual(match([Match()], "ac"), True)
+        self.assertEqual(match([Match(), Char("x")], "ac"), True)
 
 if __name__ == "__main__":
     unittest.main()
