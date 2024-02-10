@@ -137,6 +137,9 @@ def match(ops: list[Opcode], text: str) -> bool:
 
 
 def native_compile(ops: list[Opcode]) -> str:
+    # TODO(max): Add outer loop that pops threads from the stack and runs them
+    # TODO(max): Add prologue
+    # TODO(max): Add epilogue
     result: list[str] = []
 
     def push_thread(pc: int) -> list[str]:
