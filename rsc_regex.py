@@ -73,6 +73,23 @@ def compile(expr: Expr) -> list[Opcode]:
         return [Char(expr.value)]
     if isinstance(expr, Seq):
         return compile(expr.left) + compile(expr.right)
+    if isinstance(expr, Alt):
+        """
+        left|right
+                            split L1, L2
+                        L1: codes for left
+                            jmp L3
+                        L2: codes for right
+                        L3:
+        """
+        left = compile(expr.left)
+        right = compile(expr.right)
+        return [
+                Split(0, len(left) + 1),
+                *left,
+                Jump(len(right) + 1),
+                *right,
+                ]
     raise NotImplementedError(f"Unsupported expression: {expr}")
 
 
@@ -110,6 +127,9 @@ class CompileTests(unittest.TestCase):
     def test_compile_nested_seq(self) -> None:
         self.assertEqual(compile(Seq(Seq(Lit("a"), Lit("b")), Lit("c"))), [Char("a"), Char("b"), Char("c")])
 
+    def test_compile_alt(self) -> None:
+        self.assertEqual(compile(Alt(Lit("a"), Lit("b"))),
+                         [Split(0, 2), Char("a"), Jump(2), Char("b")])
 
 
 class MatchTests(unittest.TestCase):
@@ -144,6 +164,31 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(match(prog, "c"), False)
         self.assertEqual(match(prog, "bc"), True)
 
+
+class EndToEndTests(unittest.TestCase):
+    def test_match_lit(self) -> None:
+        self.assertEqual(match(compile(Lit("a")), "a"), True)
+        self.assertEqual(match(compile(Lit("a")), "b"), False)
+
+    def test_match_seq(self) -> None:
+        self.assertEqual(match(compile(Seq(Lit("a"), Lit("b"))), "ab"), True)
+        self.assertEqual(match(compile(Seq(Lit("a"), Lit("b"))), "ac"), False)
+
+    def test_match_alt(self) -> None:
+        self.assertEqual(match(compile(Alt(Lit("a"), Lit("b"))), "a"), True)
+        self.assertEqual(match(compile(Alt(Lit("a"), Lit("b"))), "b"), True)
+        self.assertEqual(match(compile(Alt(Lit("a"), Lit("b"))), "c"), False)
+
+    def test_match_alt_seq(self) -> None:
+        ab_or_cd = compile(Alt(Seq(Lit("a"), Lit("b")), Seq(Lit("c"), Lit("d"))))
+        self.assertEqual(match(ab_or_cd, "a"), False)
+        self.assertEqual(match(ab_or_cd, "b"), False)
+        self.assertEqual(match(ab_or_cd, "c"), False)
+        self.assertEqual(match(ab_or_cd, "d"), False)
+        self.assertEqual(match(ab_or_cd, "ac"), False)
+        self.assertEqual(match(ab_or_cd, "bd"), False)
+        self.assertEqual(match(ab_or_cd, "ab"), True)
+        self.assertEqual(match(ab_or_cd, "cd"), True)
 
 
 if __name__ == "__main__":
