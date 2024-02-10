@@ -136,6 +136,23 @@ def match(ops: list[Opcode], text: str) -> bool:
     return False
 
 
+def native_compile(ops: list[Opcode]) -> str:
+    result: list[str] = []
+    for op in ops:
+        if isinstance(op, Char):
+            result += [
+                # Strings are nul-terminated; we assume the regex has no
+                # nul so we can check for out-of-bounds and non-matching in
+                # one comparison
+                f"cmp [rdi], 0x{ord(op.value)}",
+                "jne .Lno_match",
+                "inc rdi",
+            ]
+        else:
+            raise NotImplementedError(f"Unsupported opcode: {op}")
+    return "\n".join(result)
+
+
 class CompileTests(unittest.TestCase):
     def test_compile_lit(self) -> None:
         self.assertEqual(compile(Lit("a")), [Char("a")])
@@ -213,6 +230,28 @@ class EndToEndTests(unittest.TestCase):
         self.assertFalse(match(ab_or_cd, "bd"))
         self.assertTrue(match(ab_or_cd, "ab"))
         self.assertTrue(match(ab_or_cd, "cd"))
+
+
+class NativeCompileTests(unittest.TestCase):
+    def test_native_compile_lit(self) -> None:
+        self.assertEqual(
+            native_compile([Char("a")]), "cmp [rdi], 0x97\njne .Lno_match\ninc rdi"
+        )
+
+    def test_native_compile_seq(self) -> None:
+        self.assertEqual(
+            native_compile([Char("a"), Char("b")]),
+            "\n".join(
+                [
+                    "cmp [rdi], 0x97",
+                    "jne .Lno_match",
+                    "inc rdi",
+                    "cmp [rdi], 0x98",
+                    "jne .Lno_match",
+                    "inc rdi",
+                ]
+            ),
+        )
 
 
 if __name__ == "__main__":
